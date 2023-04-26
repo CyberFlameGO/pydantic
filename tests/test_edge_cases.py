@@ -2366,3 +2366,43 @@ def test_generic_wrapped_forwardref():
     assert exc_info.value.errors() == [
         {'input': 1, 'loc': ('callbacks', 0), 'msg': 'Input should be a valid dictionary', 'type': 'dict_type'}
     ]
+
+
+@pytest.mark.parametrize(
+    ('sequence_type',),
+    [
+        pytest.param(list),
+        pytest.param(Sequence),
+    ],
+)
+def test_sequences_str(sequence_type):
+    class Model(BaseModel):
+        str_sequence: sequence_type[str]
+
+    m = Model(str_sequence=['1', 'bc'])
+
+    assert m.str_sequence == ['1', 'bc']
+
+
+@pytest.mark.parametrize(
+    ('sequence_type',),
+    [
+        pytest.param(list),
+        pytest.param(Sequence),
+    ],
+)
+def test_sequences_str_do_not_accept_plain_string(sequence_type):
+    class Model(BaseModel):
+        str_sequence: sequence_type[str]
+
+    with pytest.raises(ValidationError) as e:
+        Model(str_sequence='1bc')
+
+    assert e.value.errors() == [
+        {
+            'type': 'list_type',
+            'input': '1bc',
+            'loc': ('str_sequence',),
+            'msg': 'Input should be a valid list',
+        }
+    ]
